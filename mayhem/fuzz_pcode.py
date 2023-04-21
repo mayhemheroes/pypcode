@@ -1,28 +1,13 @@
 #! /usr/bin/env python3
-import io
-from contextlib import contextmanager
 from random import random
 
 import atheris
 import sys
 
-import mmap
 import fuzz_helpers as fh
 
 with atheris.instrument_imports():
     import pypcode
-
-# Exceptions
-
-@contextmanager
-def nostdout():
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
-    sys.stdout = io.StringIO()
-    sys.stderr = io.StringIO()
-    yield
-    sys.stdout = save_stdout
-    sys.stderr = save_stderr
 
 # Too expensive to create all contexts, so we'll just test a few
 arch_slice = list(pypcode.Arch.enumerate())[:7]
