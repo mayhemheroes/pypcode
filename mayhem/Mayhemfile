@@ -1,0 +1,9 @@
+project: pypcode
+target: fuzz-pcode
+testsuite:
+    - file://mayhem/testsuite
+
+cmds:
+  - cmd: /src/mayhem/fuzz_pcode.py
+    libfuzzer: true
+    timeout: 8
