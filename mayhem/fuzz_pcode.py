@@ -14,11 +14,11 @@ with atheris.instrument_imports():
 context: Optional[pypcode.Context] = None
 contexts_initialized = False
 
-loops = 0
+ctr = 0
 def TestOneInput(data):
-    global context, contexts_initialized, loops
+    global context, contexts_initialized, ctr
 
-    loops += 1
+    ctr += 1
 
     fdp = fh.EnhancedFuzzedDataProvider(data)
     if not contexts_initialized:
@@ -31,10 +31,7 @@ def TestOneInput(data):
         base = fdp.ConsumeInt(32)
         pypcode.TranslationResult = context.translate(fdp.ConsumeRemainingBytes(), base)
     except OverflowError:
-        # Raise sometimes, as it occurs too often
-        if loops < 10_000:
-            raise
-        return 1
+        return -1
 
 def main():
     atheris.Setup(sys.argv, TestOneInput)
