@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-from random import random
 from typing import Optional
 
 import atheris
@@ -10,30 +9,32 @@ import fuzz_helpers as fh
 with atheris.instrument_imports():
     import pypcode
 
-
+ctr = 0
 context: Optional[pypcode.Context] = None
 contexts_initialized = False
 
-ctr = 0
 def TestOneInput(data):
     global context, contexts_initialized, ctr
+    fdp = fh.EnhancedFuzzedDataProvider(data)
 
     ctr += 1
 
-    fdp = fh.EnhancedFuzzedDataProvider(data)
-    if not contexts_initialized:
-        chosen_arch: pypcode.Arch = fdp.PickValueInList(list(pypcode.Arch.enumerate()))
-        chosen_lang = fdp.PickValueInList(list(chosen_arch.languages))
-        context = pypcode.Context(chosen_lang)
-        contexts_initialized = True
-
     try:
-        base = fdp.ConsumeInt(32)
-        context.translate(fdp.ConsumeRemainingBytes(), base)
-    except OverflowError:
-        return -1
+        if not contexts_initialized:
+            chosen_arch: pypcode.Arch = fdp.PickValueInList(list(pypcode.Arch.enumerate()))
+            chosen_lang = fdp.PickValueInList(list(chosen_arch.languages))
+            context = pypcode.Context(chosen_lang)
+            contexts_initialized = True
+        if fdp.ConsumeBool():
+            context.translate(fdp.ConsumeRemainingBytes())
+        else:
+            context.disassemble(fdp.ConsumeRemainingBytes())
+    except IndexError:
+        if ctr > 10_000:
+            raise
 
 def main():
+    print('Starting fuzzing')
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 
