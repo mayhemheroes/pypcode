@@ -29,7 +29,7 @@ def TestOneInput(data):
 
     try:
         base = fdp.ConsumeInt(32)
-        pypcode.TranslationResult = context.translate(fdp.ConsumeRemainingBytes(), base)
+        context.translate(fdp.ConsumeRemainingBytes(), base)
     except OverflowError:
         return -1
 
