@@ -30,11 +30,10 @@ def TestOneInput(data):
         else:
             context.disassemble(fdp.ConsumeRemainingBytes())
     except IndexError:
-        if ctr > 10_000:
+        if ctr > 100_000:
             raise
 
 def main():
-    print('Starting fuzzing')
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 
