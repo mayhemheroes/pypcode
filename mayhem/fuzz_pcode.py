@@ -1,6 +1,4 @@
 #! /usr/bin/env python3
-from typing import Optional
-
 import atheris
 import sys
 
@@ -9,25 +7,33 @@ import fuzz_helpers as fh
 with atheris.instrument_imports():
     import pypcode
 
-context: Optional[pypcode.Context] = None
-contexts_initialized = False
+chosen_arch: pypcode.Arch = list(pypcode.Arch.enumerate())[0]
+chosen_lang = list(chosen_arch.languages)[0]
+context = pypcode.Context(chosen_lang)
 
+
+possible_flags = [pypcode.TranslateFlags.BB_TERMINATING, None]
 def TestOneInput(data):
-    global context, contexts_initialized
     fdp = fh.EnhancedFuzzedDataProvider(data)
 
     try:
-        if not contexts_initialized:
-            chosen_arch: pypcode.Arch = fdp.PickValueInList(list(pypcode.Arch.enumerate()))
-            chosen_lang = fdp.PickValueInList(list(chosen_arch.languages))
-            context = pypcode.Context(chosen_lang)
-            contexts_initialized = True
+        buff = fdp.ConsumeRandomBytes()
+        buff_len = len(buff)
+        base_addr = fdp.ConsumeInt(64 if '64' in chosen_arch.archname else 32)
+        off = fdp.ConsumeIntInRange(0, buff_len)
+        max_bytes = fdp.ConsumeIntInRange(0, buff_len - off)
+        max_ins = fdp.ConsumeIntInRange(0, 100)
+        flag = fdp.PickValueInList(possible_flags)
         if fdp.ConsumeBool():
-            context.translate(fdp.ConsumeRemainingBytes())
+            context.translate(buff, base_addr, off, max_bytes, max_ins, flag)
         else:
-            context.disassemble(fdp.ConsumeRemainingBytes())
+            context.disassemble(buff, base_addr, off, max_bytes, max_ins)
     except IndexError:
         return -1
+    except TypeError as e:
+        if 'incompatible' in str(e):
+            return -1
+        raise e
 
 def main():
     atheris.Setup(sys.argv, TestOneInput)
