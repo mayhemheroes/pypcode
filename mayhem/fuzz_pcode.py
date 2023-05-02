@@ -9,15 +9,12 @@ import fuzz_helpers as fh
 with atheris.instrument_imports():
     import pypcode
 
-ctr = 0
 context: Optional[pypcode.Context] = None
 contexts_initialized = False
 
 def TestOneInput(data):
-    global context, contexts_initialized, ctr
+    global context, contexts_initialized
     fdp = fh.EnhancedFuzzedDataProvider(data)
-
-    ctr += 1
 
     try:
         if not contexts_initialized:
@@ -30,8 +27,7 @@ def TestOneInput(data):
         else:
             context.disassemble(fdp.ConsumeRemainingBytes())
     except IndexError:
-        if ctr > 100_000:
-            raise
+        return -1
 
 def main():
     atheris.Setup(sys.argv, TestOneInput)
