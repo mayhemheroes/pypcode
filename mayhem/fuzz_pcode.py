@@ -11,10 +11,14 @@ chosen_arch: pypcode.Arch = list(pypcode.Arch.enumerate())[0]
 chosen_lang = list(chosen_arch.languages)[0]
 context = pypcode.Context(chosen_lang)
 
+ctr = 0
 
 possible_flags = [pypcode.TranslateFlags.BB_TERMINATING, None]
 def TestOneInput(data):
+    global ctr
     fdp = fh.EnhancedFuzzedDataProvider(data)
+
+    ctr += 1
 
     try:
         buff = fdp.ConsumeRandomBytes()
@@ -28,12 +32,16 @@ def TestOneInput(data):
             context.translate(buff, base_addr, off, max_bytes, max_ins, flag)
         else:
             context.disassemble(buff, base_addr, off, max_bytes, max_ins)
-    except IndexError:
+    except (pypcode.BadDataError, pypcode.DecoderError, pypcode.UnimplError):
         return -1
     except TypeError as e:
         if 'incompatible' in str(e):
             return -1
         raise e
+    except IndexError:
+        if ctr >= 100_000:
+            raise
+
 
 def main():
     atheris.Setup(sys.argv, TestOneInput)
